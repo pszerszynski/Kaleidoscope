@@ -1,44 +1,58 @@
-#include "lexer.hpp"
+#include "parser.hpp"
 
+// Top-Level parsing
+
+static void HandleDefinition(Parser& parser) {
+	if (parser.ParseDefinition()) {
+		fprintf(stderr, "Parsed a function definition.\n");
+	} else {
+		// Skip token for error recovery.
+		parser.GetNextToken();
+	}
+}
+
+static void HandleExtern(Parser& parser) {
+	if (parser.ParseExtern()) {
+		fprintf(stderr, "Parsed an extern\n");
+	} else {
+		// Skip token for error recovery.
+		parser.GetNextToken();
+	}
+}
+
+static void HandleTopLevelExpression(Parser& parser) {
+	// Evaluate a top-level expression into an anonymous function.
+	if (parser.ParseTopLevelExpr()) {
+		fprintf(stderr, "Parsed a top-level expr\n");
+	} else {
+		// Skip token for error recovery.
+		parser.GetNextToken();
+	}
+}
+
+/// top ::= definition | external | expression | ';'
 int main(int argc, char** argv) {
-	std::ifstream file;
-	if (argc < 2) {
-		std::cerr << "ERROR: No input given" << std::endl;
-		return -1;
-	}
-	file.open(argv[1]);
-	if (!file.is_open()) {
-		std::cerr << "ERROR: File cannot be opened" << std::endl;
-		return -1;
-	}
+	Parser parser(std::cin);
 	
-	std::vector<Token> tokens = TokenizeFile(file);
-	
-	for (auto T : tokens) {
-		std::cout << "[TOKEN_TYPE:";
-		switch (T.type) {
-		case TOK_DEF:
-			std::cout << "TOK_DEF";
+	while (true) {
+		fprintf(stderr, "ready> ");
+		switch (parser.CurrentTok) {
+		case Token::TOK_EOF:
+			return 0;
+		case ';': // ignore top-level semicolons.
+			parser.GetNextToken();
 			break;
-		case TOK_EOF:
-			std::cout << "TOK_EOF";
+		case Token::TOK_DEF:
+			HandleDefinition(parser);
 			break;
-		case TOK_EXTERN:
-			std::cout << "TOK_EXTERN";
-			break;
-		case TOK_IDENTIFIER:
-			std::cout << "TOK_IDENTIFIER " << T.header.IdentifierName;
-			break;
-		case TOK_NUMBER:
-			std::cout << "TOK_NUMBER " << T.header.NumVal;
+		case Token::TOK_EXTERN:
+			HandleExtern(parser);
 			break;
 		default:
-			std::cout << "CHARACTER \"" << (char)T.type << '\"';
+			HandleTopLevelExpression(parser);
+			break;
 		}
-		std::cout << "]" << std::endl;
 	}
-	
-	file.close();
 	
 	return 0;
 }

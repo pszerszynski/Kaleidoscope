@@ -1,19 +1,6 @@
 #include "lexer.hpp"
 
-std::vector<Token> TokenizeFile(std::ifstream& f) {
-	std::vector<Token> tokens;
-	
-	while (true) {
-		Token t = GetToken(f);
-		tokens.push_back(t);
-		if (t.type == TOK_EOF)
-			break;
-	}
-	
-	return tokens;
-}
-
-Token GetToken(std::ifstream& f) {	
+int32_t GetToken(std::istream& f) {	
 	static char LastChar = ' ';
 	
 	while (isspace(LastChar))
@@ -28,13 +15,12 @@ Token GetToken(std::ifstream& f) {
 		}
 		
 		if (IdentifierStr == "def")
-			return Token(TOK_DEF);
+			return Token::TOK_DEF;
 		else if (IdentifierStr == "extern")
-			return Token(TOK_EXTERN);
+			return Token::TOK_EXTERN;
 		
-		Token result = Token(TOK_IDENTIFIER);
-		result.header.IdentifierName = IdentifierStr;
-		return result;
+		Token::IdentifierName = IdentifierStr;
+		return Token::TOK_IDENTIFIER;
 	}
 	
 	if (isdigit(LastChar) || LastChar == '.') {
@@ -45,9 +31,8 @@ Token GetToken(std::ifstream& f) {
 			LastChar = f.get();
 		}
 		
-		Token result = Token(TOK_NUMBER);
-		result.header.NumVal = strtod(NumStr.c_str(), 0);
-		return result;
+		Token::NumVal = strtod(NumStr.c_str(), 0);
+		return Token::TOK_NUMBER;
 	}
 	
 	if (LastChar == '#') {
@@ -56,14 +41,10 @@ Token GetToken(std::ifstream& f) {
 		while (LastChar != EOF && LastChar != '\n' && LastChar != '\r');
 		
 		if (LastChar == EOF)
-			return Token(TOK_EOF);
+			return Token::TOK_EOF;
 	}
 	
-	int ThisChar = LastChar;
+	int32_t ThisChar = LastChar;
 	LastChar = f.get();
-	return Token((Token_Type)ThisChar);
-}
-
-Token TokenFromStr(std::string) {
-	return Token(TOK_EOF);
+	return ThisChar;
 }
