@@ -1,8 +1,10 @@
 #pragma once
 
+#include <string>
+
 #include "token.hpp"
 
-std::vector<Token> TokenizeFile(std::ifstream& f);
-Token GetToken(std::ifstream& f);
+extern bool LexerErr;
 
-Token TokenFromStr(std::string);
+void LexerError(const std::string&);
+int32_t GetToken(std::istream& f);

@@ -1,44 +1,74 @@
-#include "lexer.hpp"
+#include "interpreter.hpp"
 
-int main(int argc, char** argv) {
-	std::ifstream file;
-	if (argc < 2) {
-		std::cerr << "ERROR: No input given" << std::endl;
-		return -1;
+// Top-Level parsing
+
+void HandleDefinition(Parser& parser) {
+	std::unique_ptr<FunctionAST> funcAST = parser.ParseDefinition();
+	if (funcAST != nullptr) {
+		Function func;
+		func.func = std::move(funcAST);
+		Interpreter::funcs.push_back(std::move(func));
+		fprintf(stderr, "Parsed a function definition.\n");
+	} else {
+		// Skip token for error recovery.
+		parser.GetNextToken();
 	}
-	file.open(argv[1]);
-	if (!file.is_open()) {
-		std::cerr << "ERROR: File cannot be opened" << std::endl;
-		return -1;
+}
+
+void HandleExtern(Parser& parser) {
+	if (parser.ParseExtern()) {
+		fprintf(stderr, "Parsed an extern\n");
+	} else {
+		// Skip token for error recovery.
+		parser.GetNextToken();
+	}
+}
+
+void HandleTopLevelExpression(Parser& parser) {
+	// Evaluate a top-level expression into an anonymous function.
+	std::unique_ptr<FunctionAST> topAST = parser.ParseTopLevelExpr();
+	if (topAST != nullptr) {
+		std::vector<double> args;
+		double val = topAST->Call(args);
+		std::cout << val << std::endl;
+	} else {
+		// Skip token for error recovery.
+		parser.GetNextToken();
 	}
 	
-	std::vector<Token> tokens = TokenizeFile(file);
-	
-	for (auto T : tokens) {
-		std::cout << "[TOKEN_TYPE:";
-		switch (T.type) {
-		case TOK_DEF:
-			std::cout << "TOK_DEF";
+	topAST.reset();
+}
+
+void MainLoop(Parser& parser) {
+	while (true) {
+		switch (parser.CurrentTok) {
+		case Token::TOK_EOF:
+			return;
+		case ';': // ignore top-level semicolons.
+			parser.GetNextToken();
 			break;
-		case TOK_EOF:
-			std::cout << "TOK_EOF";
+		case Token::TOK_DEF:
+			HandleDefinition(parser);
 			break;
-		case TOK_EXTERN:
-			std::cout << "TOK_EXTERN";
-			break;
-		case TOK_IDENTIFIER:
-			std::cout << "TOK_IDENTIFIER " << T.header.IdentifierName;
-			break;
-		case TOK_NUMBER:
-			std::cout << "TOK_NUMBER " << T.header.NumVal;
+		case Token::TOK_EXTERN:
+			HandleExtern(parser);
 			break;
 		default:
-			std::cout << "CHARACTER \"" << (char)T.type << '\"';
+			HandleTopLevelExpression(parser);
+			break;
 		}
-		std::cout << "]" << std::endl;
+		std::cerr << "ready> " << std::flush;
 	}
+}
+
+/// top ::= definition | external | expression | ';'
+int main(int argc, char** argv) {
+	Parser parser(std::cin);
 	
-	file.close();
+	std::cerr << "ready> " << std::flush;
+	parser.GetNextToken();
+	
+	MainLoop(parser);
 	
 	return 0;
 }

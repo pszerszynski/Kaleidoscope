@@ -40,6 +40,13 @@
 		"typeindex": "cpp",
 		"typeinfo": "cpp",
 		"utility": "cpp",
-		"algorithm": "cpp"
-	}
+		"algorithm": "cpp",
+		"csignal": "cpp",
+		"cstdarg": "cpp",
+		"strstream": "cpp",
+		"condition_variable": "cpp",
+		"memory": "cpp",
+		"mutex": "cpp"
+	},
+	"C_Cpp.errorSquiggles": "Enabled"
 }
