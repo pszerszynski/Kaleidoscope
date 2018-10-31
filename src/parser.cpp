@@ -15,19 +15,24 @@ std::unique_ptr<PrototypeAST> Parser::LogErrorP(const std::string& str) {
 }
 
 int Parser::GetTokenPrecedence() {
-	if (!isascii(this->CurrentTok))
-		return -1;
-		
-	int TokPrec = this->BinopPrecedence[this->CurrentTok];
+	int TokPrec = this->BinopPrecedence[Token::Operator];
 	if (TokPrec <= 0) return -1;
 	return TokPrec;
 }
 
 void Parser::InstallPrecedence() {
-	BinopPrecedence['<'] = 10;
-	BinopPrecedence['+'] = 20;
-	BinopPrecedence['-'] = 20;
-	BinopPrecedence['*'] = 40;
+	BinopPrecedence[OPERATOR::OP_AND] = 10;
+	BinopPrecedence[OPERATOR::OP_OR] = 10;
+	BinopPrecedence[OPERATOR::OP_L_THAN] = 20;
+	BinopPrecedence[OPERATOR::OP_G_THAN] = 20;
+	BinopPrecedence[OPERATOR::OP_LE_THAN] = 20;
+	BinopPrecedence[OPERATOR::OP_GE_THAN] = 20;
+	BinopPrecedence[OPERATOR::OP_ADD] = 30;
+	BinopPrecedence[OPERATOR::OP_SUB] = 30;
+	BinopPrecedence[OPERATOR::OP_MULT] = 50;
+	BinopPrecedence[OPERATOR::OP_DIV] = 50;
+	BinopPrecedence[OPERATOR::OP_NOT_OP] = -1;
+	BinopPrecedence[OPERATOR::OP_NULL] = 0;
 }
 
 // numberexpr ::= number
@@ -89,6 +94,35 @@ std::unique_ptr<ExprAST> Parser::ParseIdentifierExpr() {
 	return std::make_unique<CallExprAST>(idName, std::move(args));
 }
 
+std::unique_ptr<ExprAST> Parser::ParseIfElse() {
+	this->GetNextToken(); // eat 'if'
+	
+	std::unique_ptr<ExprAST> cond, body, else_body = nullptr;
+	cond = Parser::ParseExpression();
+	if (cond == nullptr)
+		return nullptr;
+	
+	// expected to be on 'then' token
+	if (this->CurrentTok != Token::TOK_THEN) {
+		return LogError("expected \'then\'");
+	}
+	
+	this->GetNextToken();
+	body = Parser::ParseExpression();
+	if (body == nullptr)
+		return nullptr;
+	
+	this->GetNextToken(); // should get else if there is an else statement
+	if (this->CurrentTok == Token::TOK_ELSE) {
+		this->GetNextToken(); // eat 'else'
+		else_body = Parser::ParseExpression();
+		if (else_body == nullptr)
+			return nullptr;
+	}
+	
+	return std::make_unique<IfElseExprAST>(std::move(cond), std::move(body), std::move(else_body));
+}
+
 // primary
 //	::= indentifierexpr
 //	::= numberexpr
@@ -101,6 +135,8 @@ std::unique_ptr<ExprAST> Parser::ParsePrimary() {
 		return ParseIdentifierExpr();
 	case Token::Token_Type::TOK_NUMBER:
 		return ParseNumberExpr();
+	case Token::Token_Type::TOK_IF:
+		return ParseIfElse();
 	case '(':
 		return ParseParenExpr();
 	}
@@ -124,18 +160,19 @@ std::unique_ptr<ExprAST> Parser::ParseBinOpRHS(int ExprPrec, std::unique_ptr<Exp
 	while (1) {
 		int TokPrec = GetTokenPrecedence();
 		
-		if (TokPrec < ExprPrec)
+		if (TokPrec < ExprPrec || (this->CurrentTok == Token::TOK_THEN))
 			return LHS;
 			
-		int BinOp = this->CurrentTok;
+		OPERATOR BinOp = Token::Operator;
 		this->GetNextToken(); // eat binop
 		
 		// parse the primary expression after the binary operator
 		auto RHS = this->ParsePrimary();
 		if (!RHS)
 			return nullptr;
-			
+		
 		int NextPrec = this->GetTokenPrecedence();
+		
 		if (TokPrec < NextPrec) {
 			RHS = this->ParseBinOpRHS(TokPrec+1, std::move(RHS));
 			if (!RHS)

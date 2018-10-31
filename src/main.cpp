@@ -1,9 +1,13 @@
-#include "parser.hpp"
+#include "interpreter.hpp"
 
 // Top-Level parsing
 
-static void HandleDefinition(Parser& parser) {
-	if (parser.ParseDefinition()) {
+void HandleDefinition(Parser& parser) {
+	std::unique_ptr<FunctionAST> funcAST = parser.ParseDefinition();
+	if (funcAST != nullptr) {
+		Function func;
+		func.func = std::move(funcAST);
+		Interpreter::funcs.push_back(std::move(func));
 		fprintf(stderr, "Parsed a function definition.\n");
 	} else {
 		// Skip token for error recovery.
@@ -11,7 +15,7 @@ static void HandleDefinition(Parser& parser) {
 	}
 }
 
-static void HandleExtern(Parser& parser) {
+void HandleExtern(Parser& parser) {
 	if (parser.ParseExtern()) {
 		fprintf(stderr, "Parsed an extern\n");
 	} else {
@@ -20,25 +24,26 @@ static void HandleExtern(Parser& parser) {
 	}
 }
 
-static void HandleTopLevelExpression(Parser& parser) {
+void HandleTopLevelExpression(Parser& parser) {
 	// Evaluate a top-level expression into an anonymous function.
-	if (parser.ParseTopLevelExpr()) {
-		fprintf(stderr, "Parsed a top-level expr\n");
+	std::unique_ptr<FunctionAST> topAST = parser.ParseTopLevelExpr();
+	if (topAST != nullptr) {
+		std::vector<double> args;
+		double val = topAST->Call(args);
+		std::cout << val << std::endl;
 	} else {
 		// Skip token for error recovery.
 		parser.GetNextToken();
 	}
+	
+	topAST.reset();
 }
 
-/// top ::= definition | external | expression | ';'
-int main(int argc, char** argv) {
-	Parser parser(std::cin);
-	
+void MainLoop(Parser& parser) {
 	while (true) {
-		fprintf(stderr, "ready> ");
 		switch (parser.CurrentTok) {
 		case Token::TOK_EOF:
-			return 0;
+			return;
 		case ';': // ignore top-level semicolons.
 			parser.GetNextToken();
 			break;
@@ -52,7 +57,18 @@ int main(int argc, char** argv) {
 			HandleTopLevelExpression(parser);
 			break;
 		}
+		std::cerr << "ready> " << std::flush;
 	}
+}
+
+/// top ::= definition | external | expression | ';'
+int main(int argc, char** argv) {
+	Parser parser(std::cin);
+	
+	std::cerr << "ready> " << std::flush;
+	parser.GetNextToken();
+	
+	MainLoop(parser);
 	
 	return 0;
 }
