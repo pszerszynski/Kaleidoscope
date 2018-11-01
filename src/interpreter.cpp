@@ -10,3 +10,13 @@ void Interpreter::LogError(std::string str) {
 	std::cerr << "LogError: " << str << std::endl;
 	Interpreter::evalError = true;
 }
+
+void Interpreter::LoadSTD() {
+	for (auto F : StandardLibrary) {
+		Function func;
+		func.func = std::make_unique<FunctionAST>(F);
+		Interpreter::funcs.push_back(std::move(func));
+	}
+	
+	StandardLibrary.clear();
+}

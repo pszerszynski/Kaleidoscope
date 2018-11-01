@@ -63,6 +63,13 @@ void MainLoop(Parser& parser) {
 
 /// top ::= definition | external | expression | ';'
 int main(int argc, char** argv) {
+	InitSTD();
+	Interpreter::LoadSTD();
+	
+	std::cout << "Loaded STD functions" << std::endl;
+	for (auto F = Interpreter::funcs.begin(); F != Interpreter::funcs.end(); ++F) {
+		std::cout << F->func->GetName() << std::endl;
+	}
 	Parser parser(std::cin);
 	
 	std::cerr << "ready> " << std::flush;

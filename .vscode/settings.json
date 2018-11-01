@@ -46,7 +46,8 @@
 		"strstream": "cpp",
 		"condition_variable": "cpp",
 		"memory": "cpp",
-		"mutex": "cpp"
+		"mutex": "cpp",
+		"slist": "cpp"
 	},
 	"C_Cpp.errorSquiggles": "Enabled"
 }

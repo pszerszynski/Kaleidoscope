@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "parser.hpp"
+#include "std.hpp"
 
 struct Variable;
 
@@ -20,6 +21,8 @@ namespace Interpreter {
 	// used to break out of error
 	extern bool evalError;
 	void LogError(std::string);
+	
+	void LoadSTD();
 	
 	extern std::vector<Variable> global_vars;
 	

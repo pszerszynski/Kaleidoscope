@@ -131,6 +131,9 @@ double IfElseExprAST::Evaluate() {
 }
 
 double FunctionAST::Call(std::vector<double>& callArgs) {
+	if (this->is_extern)
+		return this->CallExternalFunction(callArgs);
+	
 	if (callArgs.size() != this->proto->GetArgs().size()) {
 		std::string errorStr = this->proto->GetName() + "(";
 		for (auto a = this->proto->GetArgs().begin(); a != this->proto->GetArgs().end(); ++a) {
@@ -158,4 +161,21 @@ double FunctionAST::Call(std::vector<double>& callArgs) {
 	
 	Interpreter::scopeVars.reset();
 	return returnVal;
+}
+
+double FunctionAST::CallExternalFunction(std::vector<double>& callArgs) {
+	if (callArgs.size() != this->proto->GetArgs().size()) {
+		std::string errorStr = this->proto->GetName() + "(";
+		for (auto a = this->proto->GetArgs().begin(); a != this->proto->GetArgs().end(); ++a) {
+			errorStr += *a;
+			if (a != this->proto->GetArgs().end() - 1)
+				errorStr += " ";
+		}
+		errorStr += ") expects " + std::to_string(this->proto->GetArgs().size()) + " arguments, got "
+			+ std::to_string(callArgs.size());
+		Interpreter::LogError(errorStr);
+		return std::nan("");
+	}
+	
+	return this->external_func(callArgs);
 }

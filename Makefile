@@ -8,10 +8,10 @@ LDIR=lib
 
 LIBS=-lm -lpthread
 
-_DEPS = token.hpp lexer.hpp ast.hpp parser.hpp interpreter.hpp
+_DEPS = token.hpp lexer.hpp ast.hpp parser.hpp interpreter.hpp std.hpp
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 
-_OBJ = main.o lexer.o token.o ast.o parser.o interpreter.o
+_OBJ = main.o lexer.o token.o ast.o parser.o interpreter.o std.o
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
 OUTPUT = kale

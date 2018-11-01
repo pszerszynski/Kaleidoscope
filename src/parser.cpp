@@ -96,29 +96,30 @@ std::unique_ptr<ExprAST> Parser::ParseIdentifierExpr() {
 
 std::unique_ptr<ExprAST> Parser::ParseIfElse() {
 	this->GetNextToken(); // eat 'if'
-	
+
 	std::unique_ptr<ExprAST> cond, body, else_body = nullptr;
+	
 	cond = Parser::ParseExpression();
 	if (cond == nullptr)
 		return nullptr;
 	
 	// expected to be on 'then' token
-	if (this->CurrentTok != Token::TOK_THEN) {
+	if (this->CurrentTok != Token::TOK_THEN)
 		return LogError("expected \'then\'");
-	}
+	this->GetNextToken(); // eat 'then'
 	
-	this->GetNextToken();
 	body = Parser::ParseExpression();
 	if (body == nullptr)
 		return nullptr;
 	
-	this->GetNextToken(); // should get else if there is an else statement
-	if (this->CurrentTok == Token::TOK_ELSE) {
-		this->GetNextToken(); // eat 'else'
-		else_body = Parser::ParseExpression();
-		if (else_body == nullptr)
-			return nullptr;
-	}
+	this->GetNextToken();
+	if (this->CurrentTok != Token::TOK_ELSE)
+		return LogError("expected \'else\'");
+	this->GetNextToken(); // eat 'else'
+	
+	else_body = Parser::ParseExpression();
+	if (else_body == nullptr)
+		return nullptr;
 	
 	return std::make_unique<IfElseExprAST>(std::move(cond), std::move(body), std::move(else_body));
 }

@@ -5,6 +5,8 @@
 #include <vector>
 #include <cmath>
 
+#include "std.hpp"
+
 // base class for all expr nodes
 class ExprAST {
 public:
@@ -81,11 +83,18 @@ class FunctionAST {
 private:
 	std::unique_ptr<PrototypeAST> proto;
 	std::unique_ptr<ExprAST> body;
+	bool is_extern;
+	double (*external_func)(std::vector<double>&);
+	
+	double CallExternalFunction(std::vector<double>& callArgs);
 public:
 	const std::string& GetName();
 	double Call(std::vector<double>& callArgs);
 
 	FunctionAST(std::unique_ptr<PrototypeAST> proto,
 		std::unique_ptr<ExprAST> body)
-		: proto(std::move(proto)), body(std::move(body)) { ; }
+		: proto(std::move(proto)), body(std::move(body)), is_extern(false) { ; }
+	
+	FunctionAST(ExternalFunction& _f): proto(std::make_unique<PrototypeAST>(_f.name, _f.args)),
+		body(nullptr), is_extern(true), external_func(_f.func) { ; }
 };
