@@ -9,20 +9,24 @@ void LexerError(const std::string& str) {
 
 
 #define RETURN_TOKEN(tok) LastToken = tok; return tok
-int32_t GetToken(std::istream& f) {
+int32_t GetToken(Parser& p) {
 	static int LastToken = Token::TOK_EOF;
-	static char LastChar = ' ';
+	static int LastChar = ' ';
 	
 	Token::Operator = OPERATOR::OP_NOT_OP;
 	
 	while (isspace(LastChar))
-		LastChar = f.get();
+		LastChar = p.GetNextChar();
+		
+	if (LastChar == EOF) {
+		RETURN_TOKEN(Token::TOK_EOF);
+	}
 		
 	if (isalpha(LastChar)) {
 		std::string IdentifierStr = "";
 		
 		IdentifierStr = LastChar;
-		while (isalnum( (LastChar = f.get()) )) {
+		while (isalnum( (LastChar = p.GetNextChar()) )) {
 			IdentifierStr += LastChar;
 		}
 		
@@ -49,7 +53,7 @@ int32_t GetToken(std::istream& f) {
 		
 		while (true) {
 			NumStr += LastChar;
-			LastChar = f.get();
+			LastChar = p.GetNextChar();
 			if (isdigit(LastChar) || LastChar == '.')
 				continue;
 			break;
@@ -61,17 +65,13 @@ int32_t GetToken(std::istream& f) {
 	
 	if (LastChar == '#') {
 		do
-			LastChar = f.get();
+			LastChar = p.GetNextChar();
 		while (LastChar != EOF && LastChar != '\n' && LastChar != '\r');
-		
-		if (LastChar == EOF) {
-			RETURN_TOKEN(Token::TOK_EOF);
-		}
 	}
 	
 	for (char* c = (char*)RecognisedChars; *c; ++c) {
 		if (*c == LastChar) {
-			LastChar = f.get();
+			LastChar = p.GetNextChar();
 			RETURN_TOKEN(*c);
 		}
 	}
@@ -79,7 +79,7 @@ int32_t GetToken(std::istream& f) {
 	std::string temp = std::string(1, LastChar);
 	
 	while (true) {
-		LastChar = f.get();
+		LastChar = p.GetNextChar();
 		if (isalnum(LastChar) || isspace(LastChar)) {
 			break;
 		}

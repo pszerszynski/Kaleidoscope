@@ -2,15 +2,22 @@
 
 #include <map>
 #include <iostream>
+#include <fstream>
 #include <string>
+
+class Parser;
 
 #include "lexer.hpp"
 #include "ast.hpp"
 
 class Parser {
 public:
-	Parser(std::istream& istr): file(istr) { this->InstallPrecedence(); }
+	Parser(std::istream& istr): stream(std::cin), file(std::ifstream()), is_file(false) { ; this->InstallPrecedence(); }
+	Parser(const std::string& filename): stream(std::cin), file(std::ifstream(filename)), is_file(true) { this->InstallPrecedence(); }
 	
+	bool IsOpen();
+	
+	char GetNextChar();
 	int GetNextToken();
 	int CurrentTok = 0;
 
@@ -29,8 +36,12 @@ public:
 	std::unique_ptr<FunctionAST> ParseDefinition();
 	std::unique_ptr<PrototypeAST> ParseExtern();
 	std::unique_ptr<FunctionAST> ParseTopLevelExpr();
+	
+	~Parser();
 private:
-	std::istream& file;
+	std::istream& stream;
+	std::ifstream file;
+	bool is_file;
 	
 	// 1 is the lowest precedence for binary operators
 	std::map<OPERATOR, int> BinopPrecedence;

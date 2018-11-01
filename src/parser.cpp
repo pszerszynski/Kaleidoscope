@@ -1,7 +1,19 @@
 #include "parser.hpp"
 
+char Parser::GetNextChar() {
+	if (this->is_file) {
+		return this->file.get();
+	}
+	return this->stream.get();
+}
+
+bool Parser::IsOpen() {
+	return this->file.is_open();
+}
+
 int Parser::GetNextToken() {
-	return this->CurrentTok = GetToken(this->file);
+	return this->CurrentTok = GetToken(*this);
+	std::cout << this->CurrentTok << " " << std::flush;
 }
 
 std::unique_ptr<ExprAST> Parser::LogError(const std::string& str) {
@@ -235,4 +247,8 @@ std::unique_ptr<FunctionAST> Parser::ParseTopLevelExpr() {
 		return std::make_unique<FunctionAST>(std::move(proto), std::move(E));
 	}
 	return nullptr;
+}
+
+Parser::~Parser() {
+	this->file.close();
 }

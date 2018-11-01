@@ -1,3 +1,6 @@
+#include <iostream>
+#include <fstream>
+
 #include "interpreter.hpp"
 
 // Top-Level parsing
@@ -8,7 +11,6 @@ void HandleDefinition(Parser& parser) {
 		Function func;
 		func.func = std::move(funcAST);
 		Interpreter::funcs.push_back(std::move(func));
-		fprintf(stderr, "Parsed a function definition.\n");
 	} else {
 		// Skip token for error recovery.
 		parser.GetNextToken();
@@ -17,7 +19,7 @@ void HandleDefinition(Parser& parser) {
 
 void HandleExtern(Parser& parser) {
 	if (parser.ParseExtern()) {
-		fprintf(stderr, "Parsed an extern\n");
+		NULL;
 	} else {
 		// Skip token for error recovery.
 		parser.GetNextToken();
@@ -41,6 +43,9 @@ void HandleTopLevelExpression(Parser& parser) {
 
 void MainLoop(Parser& parser) {
 	while (true) {
+		if (!parser.IsOpen())
+			std::cerr << "ready> " << std::flush;
+		
 		switch (parser.CurrentTok) {
 		case Token::TOK_EOF:
 			return;
@@ -57,7 +62,6 @@ void MainLoop(Parser& parser) {
 			HandleTopLevelExpression(parser);
 			break;
 		}
-		std::cerr << "ready> " << std::flush;
 	}
 }
 
@@ -66,16 +70,20 @@ int main(int argc, char** argv) {
 	InitSTD();
 	Interpreter::LoadSTD();
 	
-	std::cout << "Loaded STD functions" << std::endl;
-	for (auto F = Interpreter::funcs.begin(); F != Interpreter::funcs.end(); ++F) {
-		std::cout << F->func->GetName() << std::endl;
+	if (argc > 1) {
+		Parser parser = Parser(std::string(argv[1]));
+		if (!parser.IsOpen()) {
+			std::cout << "Could not find file \"" << argv[1] << "\"" << std::endl;
+		}
+		
+		parser.GetNextToken();
+		MainLoop(parser);
+	} else {
+		Parser parser(std::cin);
+		std::cerr << "ready> " << std::flush;
+		parser.GetNextToken();
+		MainLoop(parser);
 	}
-	Parser parser(std::cin);
-	
-	std::cerr << "ready> " << std::flush;
-	parser.GetNextToken();
-	
-	MainLoop(parser);
 	
 	return 0;
 }
